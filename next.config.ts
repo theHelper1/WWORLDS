@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  agentRules: false,
 };
 
 export default nextConfig;
