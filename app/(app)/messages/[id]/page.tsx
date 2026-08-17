@@ -37,6 +37,7 @@ export default async function ConversationPage({
       <p className="text-xs uppercase tracking-[0.2em] text-gold">Conversation</p>
       <h1 className="mb-4 font-serif text-4xl">{title}</h1>
       <ChatThread
+        key={conversation.id}
         conversationId={conversation.id}
         currentUserId={user.id}
         initialMessages={conversation.messages.map((message) => ({

@@ -3,7 +3,7 @@
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { sendMessageAction } from "@/lib/actions";
-import { formatUsd, relativeTime } from "@/lib/utils";
+import { relativeTime } from "@/lib/utils";
 import type { MessageKind } from "@prisma/client";
 
 export type ChatMessage = {
@@ -30,10 +30,6 @@ export function ChatThread({
   const [optimistic, addOptimistic] = useOptimistic(messages);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
-
-  useEffect(() => {
-    setMessages(initialMessages);
-  }, [initialMessages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -119,8 +115,4 @@ export function ChatThread({
       </form>
     </div>
   );
-}
-
-export function PaymentHint({ amount }: { amount: number }) {
-  return <span>{formatUsd(amount)}</span>;
 }
