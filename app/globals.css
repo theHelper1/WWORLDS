@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+:root {
+  --ivory: #f4efe6;
+  --ivory-deep: #e8dfd0;
+  --paper: #fbf7f0;
+  --blush: #c98986;
+  --blush-deep: #b56e6c;
+  --sage: #6f7f68;
+  --sage-deep: #55634f;
+  --ink: #241e18;
+  --ink-soft: #5c5348;
+  --gold: #b8925a;
+  --xrp: #1aa3d9;
+  --xrp-deep: #0b6f99;
+}
+
+@theme inline {
+  --color-ivory: var(--ivory);
+  --color-ivory-deep: var(--ivory-deep);
+  --color-paper: var(--paper);
+  --color-blush: var(--blush);
+  --color-blush-deep: var(--blush-deep);
+  --color-sage: var(--sage);
+  --color-sage-deep: var(--sage-deep);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-gold: var(--gold);
+  --color-xrp: var(--xrp);
+  --color-xrp-deep: var(--xrp-deep);
+  --font-serif: var(--font-cormorant);
+  --font-sans: var(--font-outfit);
+}
+
+* {
+  border-color: color-mix(in oklab, var(--ink) 10%, transparent);
+}
+
+html,
+body {
+  background: var(--ivory);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  min-height: 100%;
+}
+
+h1,
+h2,
+h3,
+.font-serif {
+  font-family: var(--font-cormorant), Georgia, serif;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--blush) 40%, white);
+}
+
+@keyframes rail-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes rail-flow {
+  from {
+    transform: translateX(-40%);
+  }
+  to {
+    transform: translateX(40%);
+  }
+}
+
+.rail-pulse {
+  animation: rail-pulse 1.4s ease-in-out infinite;
+}
+
+.rail-flow {
+  animation: rail-flow 1.6s linear infinite;
+}

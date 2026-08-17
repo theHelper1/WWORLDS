@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum Role {
+  COUPLE
+  VENDOR
+}
+
+enum VendorCategory {
+  VENUE
+  PHOTOGRAPHER
+  FLORIST
+  CATERING
+  DJ
+  PLANNER
+  BEAUTY
+  CAKE
+}
+
+enum ContractStatus {
+  DRAFT
+  SENT
+  SIGNED
+  DEPOSIT_PAID
+  COMPLETED
+}
+
+enum PaymentKind {
+  DEPOSIT
+  BALANCE
+}
+
+enum PaymentStatus {
+  DUE
+  PROCESSING
+  PAID
+  FAILED
+}
+
+enum RailStatus {
+  PENDING
+  ONRAMP
+  BRIDGING
+  OFFRAMP
+  SETTLED
+}
+
+enum MessageKind {
+  TEXT
+  CONTRACT
+  PAYMENT
+  SYSTEM
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+
+  coupleProfile       CoupleProfile?
+  vendorProfile       VendorProfile?
+  sentMessages        Message[]           @relation("SentMessages")
+  coupleConversations Conversation[]      @relation("CoupleConversations")
+  vendorConversations Conversation[]      @relation("VendorConversations")
+  coupleContracts     Contract[]          @relation("CoupleContracts")
+  vendorContracts     Contract[]          @relation("VendorContracts")
+  signatures          Signature[]
+}
+
+model CoupleProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  partnerName String
+  weddingDate DateTime
+  city        String
+  guestCount  Int
+  budget      Float
+  venueName   String?
+}
+
+model VendorProfile {
+  id            String          @id @default(cuid())
+  userId        String          @unique
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName  String
+  category      VendorCategory
+  bio           String
+  city          String
+  startingPrice Float
+  rating        Float
+  reviewCount   Int
+  tags          Json
+  coverUrl      String
+  portfolio     Json
+  packages      Json
+  reviews       Json
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  coupleUserId  String
+  vendorUserId  String
+  couple        User     @relation("CoupleConversations", fields: [coupleUserId], references: [id], onDelete: Cascade)
+  vendor        User     @relation("VendorConversations", fields: [vendorUserId], references: [id], onDelete: Cascade)
+  lastMessageAt DateTime @default(now())
+  lastPreview   String   @default("")
+  coupleUnread  Int      @default(0)
+  vendorUnread  Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  messages  Message[]
+  contracts Contract[]
+
+  @@unique([coupleUserId, vendorUserId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  kind           MessageKind  @default(TEXT)
+  contractId     String?
+  paymentId      String?
+  createdAt      DateTime     @default(now())
+}
+
+model Contract {
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  coupleUserId   String
+  vendorUserId   String
+  couple         User           @relation("CoupleContracts", fields: [coupleUserId], references: [id], onDelete: Cascade)
+  vendor         User           @relation("VendorContracts", fields: [vendorUserId], references: [id], onDelete: Cascade)
+  title          String
+  terms          String
+  amount         Float
+  depositPercent Float          @default(30)
+  status         ContractStatus @default(DRAFT)
+  createdAt      DateTime       @default(now())
+  signedAt       DateTime?
+
+  signatures Signature[]
+  payments   Payment[]
+}
+
+model Signature {
+  id         String   @id @default(cuid())
+  contractId String
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  typedName  String
+  imageData  String
+  signedAt   DateTime @default(now())
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  contractId   String
+  contract     Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  kind         PaymentKind
+  fiatAmount   Float
+  feePercent   Float         @default(2.9)
+  feeAmount    Float
+  vendorPayout Float
+  xrpRate      Float
+  xrpAmount    Float
+  xrplTxHash   String?
+  railStatus   RailStatus    @default(PENDING)
+  status       PaymentStatus @default(DUE)
+  createdAt    DateTime      @default(now())
+  paidAt       DateTime?
+}
