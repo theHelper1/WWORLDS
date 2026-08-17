@@ -45,6 +45,11 @@ export default async function ContractDetailPage({
               {contract.signatures[0].typedName} ·{" "}
               {contract.signedAt?.toLocaleString("en-US")}
             </p>
+            {contract.signatures[0].ipAddress ? (
+              <p className="mt-1 text-[11px] text-ink-soft">
+                Signed from {contract.signatures[0].ipAddress}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </article>

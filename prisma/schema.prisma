@@ -166,6 +166,8 @@ model Signature {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   typedName  String
   imageData  String
+  ipAddress  String?
+  userAgent  String?
   signedAt   DateTime @default(now())
 }
 

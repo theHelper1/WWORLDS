@@ -10,12 +10,14 @@ import { redirect } from "next/navigation";
 export default async function VendorsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; minRating?: string; maxPrice?: string }>;
 }) {
   const user = await requireUser();
   if (user.role === "VENDOR") redirect("/dashboard");
-  const { q, category } = await searchParams;
+  const { q, category, minRating, maxPrice } = await searchParams;
   const selected = category && category in CATEGORY_LABELS ? (category as VendorCategory) : undefined;
+  const minRatingValue = minRating ? Number(minRating) : undefined;
+  const maxPriceValue = maxPrice ? Number(maxPrice) : undefined;
 
   const couple = await prisma.coupleProfile.findUnique({ where: { userId: user.id } });
   const paid = await prisma.payment.aggregate({
@@ -27,6 +29,8 @@ export default async function VendorsPage({
   const vendors = await prisma.vendorProfile.findMany({
     where: {
       ...(selected ? { category: selected } : {}),
+      ...(minRatingValue ? { rating: { gte: minRatingValue } } : {}),
+      ...(maxPriceValue ? { startingPrice: { lte: maxPriceValue } } : {}),
       ...(q
         ? {
             OR: [
@@ -40,6 +44,13 @@ export default async function VendorsPage({
   });
 
   const ranked = rankVendors(vendors, couple, remaining);
+  const extraQuery = [
+    q ? `q=${encodeURIComponent(q)}` : "",
+    minRating ? `minRating=${encodeURIComponent(minRating)}` : "",
+    maxPrice ? `maxPrice=${encodeURIComponent(maxPrice)}` : "",
+  ]
+    .filter(Boolean)
+    .join("&");
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -50,34 +61,56 @@ export default async function VendorsPage({
         payments follow.
       </p>
 
-      <form className="mt-6 flex flex-col gap-3 sm:flex-row">
+      <form className="mt-6 grid gap-3 sm:grid-cols-[1fr_8rem_10rem_auto]">
+        {selected ? <input type="hidden" name="category" value={selected} /> : null}
         <input
           name="q"
           defaultValue={q}
           placeholder="Search name, city, or style"
-          className="flex-1 rounded-full bg-paper px-5 py-3 ring-1 ring-ink/10 outline-none"
+          className="rounded-full bg-paper px-5 py-3 ring-1 ring-ink/10 outline-none"
         />
-        <button className="rounded-full bg-ink px-5 py-3 text-sm text-ivory">Search</button>
+        <select
+          name="minRating"
+          defaultValue={minRating ?? ""}
+          className="rounded-full bg-paper px-4 py-3 text-sm ring-1 ring-ink/10 outline-none"
+        >
+          <option value="">Any rating</option>
+          <option value="4.5">4.5+</option>
+          <option value="4.8">4.8+</option>
+          <option value="4.9">4.9+</option>
+        </select>
+        <input
+          name="maxPrice"
+          type="number"
+          min="1"
+          defaultValue={maxPrice}
+          placeholder="Max price"
+          className="rounded-full bg-paper px-5 py-3 ring-1 ring-ink/10 outline-none"
+        />
+        <button className="rounded-full bg-ink px-5 py-3 text-sm text-ivory">Filter</button>
       </form>
 
       <div className="mt-5 flex flex-wrap gap-2">
         <Link
-          href="/vendors"
+          href={`/vendors${extraQuery ? `?${extraQuery}` : ""}`}
           className={`rounded-full px-4 py-1.5 text-sm ${!selected ? "bg-ink text-ivory" : "bg-paper"}`}
         >
           All
         </Link>
-        {CATEGORIES.map((item) => (
-          <Link
-            key={item}
-            href={`/vendors?category=${item}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
-            className={`rounded-full px-4 py-1.5 text-sm ${
-              selected === item ? "bg-ink text-ivory" : "bg-paper"
-            }`}
-          >
-            {CATEGORY_LABELS[item]}
-          </Link>
-        ))}
+        {CATEGORIES.map((item) => {
+          const href = extraQuery ? `/vendors?category=${item}&${extraQuery}` : `/vendors?category=${item}`;
+          return (
+            <Link
+              key={item}
+              href={href}
+              className={`rounded-full px-4 py-1.5 text-sm ${
+                selected === item ? "bg-ink text-ivory" : "bg-paper"
+              }`}
+            >
+              {CATEGORY_LABELS[item]}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -93,7 +126,7 @@ export default async function VendorsPage({
             startingPrice={vendor.startingPrice}
             coverUrl={vendor.coverUrl}
             tags={vendor.tags as string[]}
-            featured={index === 0 && !selected && !q}
+            featured={index === 0 && !selected && !q && !minRating && !maxPrice}
           />
         ))}
       </div>

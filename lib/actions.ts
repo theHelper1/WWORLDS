@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ContractStatus, MessageKind, PaymentStatus, RailStatus } from "@prisma/client";
@@ -280,6 +281,12 @@ export async function signContractAction(contractId: string, typedName: string, 
   const { deposit, balance } = splitContractPayments(contract.amount, contract.depositPercent);
   const depositQuote = quotePayment(deposit);
   const balanceQuote = quotePayment(balance);
+  const requestHeaders = await headers();
+  const ipAddress =
+    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    requestHeaders.get("x-real-ip") ??
+    "demo-local";
+  const userAgent = requestHeaders.get("user-agent") ?? "unknown";
 
   await prisma.$transaction([
     prisma.signature.create({
@@ -288,6 +295,8 @@ export async function signContractAction(contractId: string, typedName: string, 
         userId: user.id,
         typedName: typedName.trim(),
         imageData,
+        ipAddress,
+        userAgent,
       },
     }),
     prisma.contract.update({
